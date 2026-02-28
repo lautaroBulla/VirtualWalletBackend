@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\VirtualWallet.Application\VirtualWallet.Application.csproj" />
+    <ProjectReference Include="..\..\Core\VirtualWallet.Domain\VirtualWallet.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
