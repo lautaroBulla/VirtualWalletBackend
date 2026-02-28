@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/SolutionItems/">
     <File Path=".gitignore" />
+    <File Path="commands.txt" />
   </Folder>
   <Folder Name="/src/" />
   <Project Path="src/Core/VirtualWallet.Application/VirtualWallet.Application.csproj" Id="6ad85f9f-6ee8-465f-b7b0-64f9ea218788" />
