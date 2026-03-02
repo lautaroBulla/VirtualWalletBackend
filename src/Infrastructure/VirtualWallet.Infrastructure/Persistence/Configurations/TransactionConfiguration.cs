@@ -4,9 +4,9 @@ using VirtualWallet.Domain.Entities;
 
 namespace VirtualWallet.Infrastructure.Persistence.Configurations
 {
-    public class TransactionConfiguration : IEntityTypeConfiguration<Transcation>
+    public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
     {
-        public void Configure(EntityTypeBuilder<Transcation> builder)
+        public void Configure(EntityTypeBuilder<Transaction> builder)
         {
             builder.HasKey(t => t.Id);
 

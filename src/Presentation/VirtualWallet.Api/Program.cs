@@ -1,6 +1,14 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using VirtualWallet.Api.Middlewares;
+using VirtualWallet.Application.Interfaces;
+using VirtualWallet.Application.Interfaces.Repositories;
+using VirtualWallet.Application.Services;
+using VirtualWallet.Application.Validators;
 using VirtualWallet.Infrastructure.Persistence;
+using VirtualWallet.Infrastructure.Persistence.Repositories;
+using VirtualWallet.Infrastructure.Services;
 
 namespace VirtualWallet.Api
 {
@@ -29,6 +37,20 @@ namespace VirtualWallet.Api
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserDtoValidator>();
+
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+            builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+
+            builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+            builder.Services.AddScoped<IAccountNumberGenerator, AccountNumberGenerator>();
+
+            builder.Services.AddScoped<IAuthService, AuthService>();
+
+            builder.Services.AddProblemDetails();
+            builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -38,6 +60,8 @@ namespace VirtualWallet.Api
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            app.UseExceptionHandler();
 
             app.UseHttpsRedirection();
             app.UseAuthorization();

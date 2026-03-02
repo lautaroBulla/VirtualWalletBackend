@@ -2,7 +2,7 @@
 
 namespace VirtualWallet.Domain.Entities
 {
-    public class Transcation
+    public class Transaction
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 

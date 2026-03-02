@@ -51,7 +51,7 @@ namespace VirtualWallet.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Transcations",
+                name: "Transactions",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -65,15 +65,15 @@ namespace VirtualWallet.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Transcations", x => x.Id);
+                    table.PrimaryKey("PK_Transactions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Transcations_Accounts_FromAccountId",
+                        name: "FK_Transactions_Accounts_FromAccountId",
                         column: x => x.FromAccountId,
                         principalTable: "Accounts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Transcations_Accounts_ToAccountId",
+                        name: "FK_Transactions_Accounts_ToAccountId",
                         column: x => x.ToAccountId,
                         principalTable: "Accounts",
                         principalColumn: "Id",
@@ -93,13 +93,13 @@ namespace VirtualWallet.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Transcations_FromAccountId",
-                table: "Transcations",
+                name: "IX_Transactions_FromAccountId",
+                table: "Transactions",
                 column: "FromAccountId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Transcations_ToAccountId",
-                table: "Transcations",
+                name: "IX_Transactions_ToAccountId",
+                table: "Transactions",
                 column: "ToAccountId");
 
             migrationBuilder.CreateIndex(
@@ -113,7 +113,7 @@ namespace VirtualWallet.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Transcations");
+                name: "Transactions");
 
             migrationBuilder.DropTable(
                 name: "Accounts");

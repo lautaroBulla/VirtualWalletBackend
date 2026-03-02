@@ -14,7 +14,7 @@ namespace VirtualWallet.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public User? User { get; set; }
-        public List<Transcation> SentTransactions { get; set; } = new List<Transcation>();
-        public List<Transcation> ReceivedTransactions { get; set; } = new List<Transcation>();
+        public List<Transaction> SentTransactions { get; set; } = new List<Transaction>();
+        public List<Transaction> ReceivedTransactions { get; set; } = new List<Transaction>();
     }
 }

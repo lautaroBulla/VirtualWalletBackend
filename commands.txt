@@ -1,3 +1,7 @@
 Add-Migration InitialCreate -Project VirtualWallet.Infrastructure -StartupProject VirtualWallet.Api
 
 Update-Database -Project VirtualWallet.Infrastructure -StartupProject VirtualWallet.Api
+
+Update-Database 0 
+
+Remove-Migration -Project VirtualWallet.Infrastructure -StartupProject VirtualWallet.Api

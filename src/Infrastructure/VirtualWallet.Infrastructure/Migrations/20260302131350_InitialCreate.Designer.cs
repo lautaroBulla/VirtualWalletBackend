@@ -12,7 +12,7 @@ using VirtualWallet.Infrastructure.Persistence;
 namespace VirtualWallet.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260228195315_InitialCreate")]
+    [Migration("20260302131350_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -73,7 +73,7 @@ namespace VirtualWallet.Infrastructure.Migrations
                     b.ToTable("Accounts");
                 });
 
-            modelBuilder.Entity("VirtualWallet.Domain.Entities.Transcation", b =>
+            modelBuilder.Entity("VirtualWallet.Domain.Entities.Transaction", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -110,7 +110,7 @@ namespace VirtualWallet.Infrastructure.Migrations
 
                     b.HasIndex("ToAccountId");
 
-                    b.ToTable("Transcations");
+                    b.ToTable("Transactions");
                 });
 
             modelBuilder.Entity("VirtualWallet.Domain.Entities.User", b =>
@@ -163,7 +163,7 @@ namespace VirtualWallet.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("VirtualWallet.Domain.Entities.Transcation", b =>
+            modelBuilder.Entity("VirtualWallet.Domain.Entities.Transaction", b =>
                 {
                     b.HasOne("VirtualWallet.Domain.Entities.Account", "FromAccount")
                         .WithMany("SentTransactions")

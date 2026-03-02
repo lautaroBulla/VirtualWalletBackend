@@ -1,5 +1,5 @@
 <Solution>
-  <Folder Name="/SolutionItems/">
+  <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
     <File Path="commands.txt" />
   </Folder>
