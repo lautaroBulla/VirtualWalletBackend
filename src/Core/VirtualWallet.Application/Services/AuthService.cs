@@ -12,21 +12,21 @@ namespace VirtualWallet.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly IAccountRepository _accountRepository;
         private readonly IPasswordHasher _passwordHasher;
-        private readonly IValidator<RegisterUserDto> _validator;
         private readonly IAccountNumberGenerator _accountNumberGenerator;
+        private readonly IValidator<RegisterUserDto> _validator;
 
         public AuthService(
             IUserRepository userRepository,
             IAccountRepository accountRepository,
             IPasswordHasher passwordHasher,
-            IValidator<RegisterUserDto> validator,
-            IAccountNumberGenerator accountNumberGenerator)
+            IAccountNumberGenerator accountNumberGenerator,
+            IValidator<RegisterUserDto> validator)
         {
             _userRepository = userRepository;
             _accountRepository = accountRepository;
             _passwordHasher = passwordHasher;
-            _validator = validator;
             _accountNumberGenerator = accountNumberGenerator;
+            _validator = validator;
         }
 
         public async Task<UserResponseDto> RegisterAsync(RegisterUserDto dto)
@@ -40,7 +40,7 @@ namespace VirtualWallet.Application.Services
             var emailExists = await _userRepository.EmailExistsAsync(dto.Email);
             if (emailExists)
             {
-                throw new BadRequestException("Email already in use.");
+                throw new BadRequestException(DomainErrors.User.EmailAlreadyInUse);
             }
 
             var user = new User
