@@ -29,15 +29,15 @@ namespace VirtualWallet.Application.Services
             _validator = validator;
         }
 
-        public async Task<UserResponseDto> RegisterAsync(RegisterUserDto dto)
+        public async Task<UserResponseDto> RegisterAsync(RegisterUserDto request)
         {
-            var validationResult = await _validator.ValidateAsync(dto);
+            var validationResult = await _validator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
                 throw new ValidationException(validationResult.Errors);
             }
 
-            var emailExists = await _userRepository.EmailExistsAsync(dto.Email);
+            var emailExists = await _userRepository.EmailExistsAsync(request.Email);
             if (emailExists)
             {
                 throw new BadRequestException(DomainErrors.User.EmailAlreadyInUse);
@@ -45,10 +45,10 @@ namespace VirtualWallet.Application.Services
 
             var user = new User
             {
-                FirstName = dto.FirstName,
-                LastName = dto.LastName,
-                Email = dto.Email,
-                PasswordHash = _passwordHasher.Hash(dto.Password),
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Email = request.Email,
+                PasswordHash = _passwordHasher.Hash(request.Password),
             };
             await _userRepository.AddAsync(user);
 

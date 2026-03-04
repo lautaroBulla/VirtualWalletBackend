@@ -2,8 +2,8 @@
 
 namespace VirtualWallet.Application.Interfaces
 {
-    public interface IAuthService
+    public interface ITransactionService
     {
-        Task<UserResponseDto> RegisterAsync(RegisterUserDto request);
+        Task MakeTransferAsync(TransferRequestDto dto);
     }
 }
