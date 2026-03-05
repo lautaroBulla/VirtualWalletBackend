@@ -12,7 +12,7 @@ using VirtualWallet.Infrastructure.Persistence;
 namespace VirtualWallet.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260302131350_InitialCreate")]
+    [Migration("20260305160358_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -141,8 +141,7 @@ namespace VirtualWallet.Infrastructure.Migrations
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

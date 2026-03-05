@@ -13,25 +13,31 @@ namespace VirtualWallet.Application.Services
         private readonly IAccountRepository _accountRepository;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IAccountNumberGenerator _accountNumberGenerator;
-        private readonly IValidator<RegisterUserDto> _validator;
+        private readonly IValidator<RegisterRequestDto> _registerValidator;
+        private readonly IValidator<LoginRequestDto> _loginValidator;
+        private readonly IJwtTokenGenerator _jwtTokenGenerator;
 
         public AuthService(
             IUserRepository userRepository,
             IAccountRepository accountRepository,
             IPasswordHasher passwordHasher,
             IAccountNumberGenerator accountNumberGenerator,
-            IValidator<RegisterUserDto> validator)
+            IValidator<RegisterRequestDto> registerValidator,
+            IValidator<LoginRequestDto> loginValidator,
+            IJwtTokenGenerator jwtTokenGenerator)
         {
             _userRepository = userRepository;
             _accountRepository = accountRepository;
             _passwordHasher = passwordHasher;
             _accountNumberGenerator = accountNumberGenerator;
-            _validator = validator;
+            _registerValidator = registerValidator;
+            _loginValidator = loginValidator;
+            _jwtTokenGenerator = jwtTokenGenerator;
         }
 
-        public async Task<UserResponseDto> RegisterAsync(RegisterUserDto request)
+        public async Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto request)
         {
-            var validationResult = await _validator.ValidateAsync(request);
+            var validationResult = await _registerValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
                 throw new ValidationException(validationResult.Errors);
@@ -62,13 +68,35 @@ namespace VirtualWallet.Application.Services
             };
             await _accountRepository.AddAsync(account);
 
-            return new UserResponseDto
+            return new RegisterResponseDto
             {
                 Id = user.Id,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email,
                 AccountNumber = account.AccountNumber
+            };
+        }
+
+        public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
+        {
+            var validationResult = await _loginValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
+            var user = await _userRepository.GetByEmailAsync(request.Email);
+            if (user == null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
+            {
+                throw new BadRequestException(DomainErrors.User.InvalidCredentials);
+            }
+
+            var token = _jwtTokenGenerator.GenerateToken(user);
+
+            return new LoginResponseDto
+            {
+                Token = token
             };
         }
     }

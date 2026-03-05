@@ -4,7 +4,7 @@ using System.Text;
 
 namespace VirtualWallet.Application.DTOs
 {
-    public record UserResponseDto
+    public record RegisterResponseDto
     {
         public Guid Id { get; set; }
         public string FirstName { get; set; } = string.Empty;

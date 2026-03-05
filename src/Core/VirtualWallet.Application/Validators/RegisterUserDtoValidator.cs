@@ -3,7 +3,7 @@ using VirtualWallet.Application.DTOs;
 
 namespace VirtualWallet.Application.Validators
 {
-    public class RegisterUserDtoValidator : AbstractValidator<RegisterUserDto>
+    public class RegisterUserDtoValidator : AbstractValidator<RegisterRequestDto>
     {
         public RegisterUserDtoValidator()
         {

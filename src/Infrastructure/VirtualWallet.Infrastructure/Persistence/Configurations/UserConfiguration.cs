@@ -26,8 +26,7 @@ namespace VirtualWallet.Infrastructure.Persistence.Configurations
                 .IsUnique();
 
             builder.Property(u => u.PasswordHash)
-                .IsRequired()
-                .HasMaxLength(255);
+                .IsRequired();
 
             builder.Property(u => u.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");

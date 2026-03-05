@@ -9,9 +9,9 @@ namespace VirtualWallet.Infrastructure.Services
             return BCrypt.Net.BCrypt.HashPassword(password);
         }
 
-        public bool Verify(string passwordHash, string inputPassword)
+        public bool Verify(string plainPassword, string hashedPassword)
         {
-            return BCrypt.Net.BCrypt.Verify(inputPassword, passwordHash);
+            return BCrypt.Net.BCrypt.Verify(plainPassword, hashedPassword);
         }
     }
 }

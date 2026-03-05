@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using VirtualWallet.Application.DTOs;
 using VirtualWallet.Application.Interfaces;
 
@@ -15,6 +16,7 @@ namespace VirtualWallet.Api.Controllers
             _transactionService = transactionService;
         }
 
+        [Authorize]
         [HttpPost("transfer")]
         public async Task<IActionResult> Transfer([FromBody] TransferRequestDto request)
         {
