@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VirtualWallet.Application.Interfaces;
+using VirtualWallet.Application.DTOs;
 
 namespace VirtualWallet.Api.Controllers
 {
@@ -21,6 +22,14 @@ namespace VirtualWallet.Api.Controllers
         {
             var accountInfo = await _accountService.GetMyAccountAsync();
             return Ok(accountInfo);
+        }
+
+        [Authorize]
+        [HttpPost("deposit")]
+        public async Task<IActionResult> Deposit([FromBody] DepositRequestDto request)
+        {
+            await _accountService.DepositAsync(request);
+            return Ok(new { message = "Deposit completed successfully." });
         }
     }
 }

@@ -5,5 +5,6 @@ namespace VirtualWallet.Application.Interfaces
     public interface IAccountService
     {
         Task<MyAccountResponseDto> GetMyAccountAsync();
+        Task DepositAsync(DepositRequestDto request);
     }
 }

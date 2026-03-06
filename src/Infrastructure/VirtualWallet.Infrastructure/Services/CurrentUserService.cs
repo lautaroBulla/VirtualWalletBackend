@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using VirtualWallet.Application.Interfaces;
+using VirtualWallet.Domain.Exceptions;
 
 namespace VirtualWallet.Infrastructure.Services
 {
@@ -20,7 +21,7 @@ namespace VirtualWallet.Infrastructure.Services
 
             if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
             {
-                throw new UnauthorizedAccessException("User ID claim is missing or invalid.");
+                throw new BadRequestException(DomainErrors.User.InvalidToken);
             }
 
             return userId;

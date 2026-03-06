@@ -1,0 +1,11 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace VirtualWallet.Application.DTOs
+{
+    public record DepositRequestDto
+    {
+        public decimal Amount { get; init; }
+    }
+}

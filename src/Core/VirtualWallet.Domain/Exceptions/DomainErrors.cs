@@ -6,6 +6,7 @@
         {
             public const string EmailAlreadyInUse = "Email already in use.";
             public const string InvalidCredentials = "Invalid email or password.";
+            public const string InvalidToken = "Invalid token.";
         }
 
         public static class Account
