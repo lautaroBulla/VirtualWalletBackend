@@ -14,17 +14,20 @@ namespace VirtualWallet.Application.Services
         private readonly ITransactionRepository _transactionRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<TransferRequestDto> _validator;
+        private readonly ICurrentUserService _currentUserService;
 
         public TransactionService(
             IAccountRepository accountRepository,
             ITransactionRepository transactionRepository,
             IUnitOfWork unitOfWork,
-            IValidator<TransferRequestDto> validator)
+            IValidator<TransferRequestDto> validator,
+            ICurrentUserService currentUserService)
         {
             _accountRepository = accountRepository;
             _transactionRepository = transactionRepository;
             _unitOfWork = unitOfWork;
             _validator = validator;
+            _currentUserService = currentUserService;
         }
 
         public async Task MakeTransferAsync(TransferRequestDto request)
@@ -35,7 +38,9 @@ namespace VirtualWallet.Application.Services
                 throw new ValidationException(validationResult.Errors);
             }
 
-            var fromAccount = await _accountRepository.GetByIdAsync(request.FromAccountId);
+            var currentUserId = _currentUserService.GetUserId();
+
+            var fromAccount = await _accountRepository.GetByUserIdAsync(currentUserId);
             if (fromAccount == null)
             {
                 throw new BadRequestException(DomainErrors.Account.FromAccountNotFound);

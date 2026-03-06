@@ -7,9 +7,6 @@ namespace VirtualWallet.Application.Validators
     {
         public TransferRequestDtoValidator()
         {
-            RuleFor(x => x.FromAccountId)
-                .NotEmpty().WithMessage("From account ID is required.");
-
             RuleFor(x => x.ToAccountNumber)
                 .NotEmpty().WithMessage("To account number is required.")
                 .Length(20).WithMessage("To account number must be exactly 10 characters long.");

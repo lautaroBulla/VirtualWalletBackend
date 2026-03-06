@@ -23,6 +23,7 @@ namespace VirtualWallet.Api
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddHttpContextAccessor();
             builder.Services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo()
@@ -61,10 +62,12 @@ namespace VirtualWallet.Api
             builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
             builder.Services.AddScoped<IAccountNumberGenerator, AccountNumberGenerator>();
             builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+            builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<ITransactionService, TransactionService>();
 
             builder.Services.AddProblemDetails();
