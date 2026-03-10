@@ -93,5 +93,89 @@ namespace VirtualWallet.Application.Services
                 throw;
             }
         }
+
+        public async Task DepositAsync(DepositRequestDto request)
+        {
+            var userId = _currentUserService.GetUserId();
+
+            var account = await _accountRepository.GetByUserIdAsync(userId);
+            if (account == null)
+            {
+                throw new BadRequestException(DomainErrors.Account.AccountNotFound);
+            }
+
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                account.Balance += request.Amount;
+                await _accountRepository.UpdateAsync(account);
+
+                var transaction = new Transaction
+                {
+                    ToAccountId = account.Id,
+                    Amount = request.Amount,
+                    Type = TransactionType.Deposit,
+                    Status = TransactionStatus.Completed,
+                    Reference = request.Reference
+                };
+
+                await _transactionRepository.AddAsync(transaction);
+
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<TransactionResponseDto>> GetHistoryAsync(int pageNumber, int pageSize)
+        {
+            var currentUserId = _currentUserService.GetUserId();
+
+            var account = await _accountRepository.GetByUserIdAsync(currentUserId);
+            if (account == null)
+            {
+                throw new BadRequestException(DomainErrors.Account.FromAccountNotFound);
+            }
+
+            var transactions = await _transactionRepository.GetPagedByAccountIdAsync(account.Id, pageNumber, pageSize);
+
+            return transactions.Select(t =>
+            {
+                bool isSender = t.FromAccountId == account.Id;
+
+                string amountPrefix = t.Type switch
+                {
+                    TransactionType.Withdrawal => "-",
+                    TransactionType.Deposit => "+",
+                    TransactionType.Transfer => isSender ? "-" : "+",
+                    _ => ""
+                };
+
+                string counterpart = t.Type switch
+                {
+                    TransactionType.Transfer => isSender
+                        ? t.ToAccount?.AccountNumber ?? "Desconocida"
+                        : t.FromAccount?.AccountNumber ?? "Desconocida",
+                    TransactionType.Deposit => "External Source",
+                    TransactionType.Withdrawal => "External Destination",
+                    _ => "N/A"
+                };
+
+                return new TransactionResponseDto
+                {
+                    TransactionId = t.Id,
+                    Amount = $"{amountPrefix}{t.Amount}",
+                    Date = t.CreatedAt,
+                    Reference = t.Reference,
+                    Type = t.Type.ToString(),
+                    CounterpartAccount = counterpart
+                };
+            });
+        }
     }
 }

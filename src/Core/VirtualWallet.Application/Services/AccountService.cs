@@ -42,41 +42,5 @@ namespace VirtualWallet.Application.Services
                 Balance = account.Balance
             };
         }
-
-        public async Task DepositAsync(DepositRequestDto request)
-        {
-            var userId = _currentUserService.GetUserId();
-
-            var account = await _accountRepository.GetByUserIdAsync(userId);
-            if (account == null)
-            {
-                throw new BadRequestException(DomainErrors.Account.AccountNotFound);
-            }
-
-            await _unitOfWork.BeginTransactionAsync();
-
-            try
-            {
-                account.Balance += request.Amount;
-                await _accountRepository.UpdateAsync(account);
-
-                var transaction = new Transaction
-                {
-                    Amount = request.Amount,
-                    Type = TransactionType.Deposit,
-                    Status = TransactionStatus.Completed
-                };
-
-                await _transactionRepository.AddAsync(transaction);
-
-                await _unitOfWork.CommitTransactionAsync();
-            }
-            catch (Exception)
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-
-                throw;
-            }
-        }
     }
 }

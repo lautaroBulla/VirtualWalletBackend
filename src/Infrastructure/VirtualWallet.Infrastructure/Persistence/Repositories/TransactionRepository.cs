@@ -31,5 +31,17 @@ namespace VirtualWallet.Infrastructure.Persistence.Repositories
             await _context.Transactions.AddAsync(transaction);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<IEnumerable<Transaction>> GetPagedByAccountIdAsync(Guid accountId, int pageNumber, int pageSize)
+        {
+            return await _context.Transactions
+                .Include(t => t.FromAccount)
+                .Include(t => t.ToAccount)
+                .Where(t => t.FromAccountId == accountId || t.ToAccountId == accountId)
+                .OrderByDescending(t => t.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
     }
 }
