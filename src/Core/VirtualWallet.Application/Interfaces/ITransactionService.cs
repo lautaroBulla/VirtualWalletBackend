@@ -6,6 +6,7 @@ namespace VirtualWallet.Application.Interfaces
     {
         Task MakeTransferAsync(TransferRequestDto dto);
         Task DepositAsync(DepositRequestDto request);
+        Task WithdrawalAsync(WithdrawalRequestDto request);
         Task<IEnumerable<TransactionResponseDto>> GetHistoryAsync(int pageNumber, int pageSize);
     }
 }

@@ -132,6 +132,49 @@ namespace VirtualWallet.Application.Services
             }
         }
 
+        public async Task WithdrawalAsync(WithdrawalRequestDto request)
+        {
+            var userId = _currentUserService.GetUserId();
+
+            var account = await _accountRepository.GetByUserIdAsync(userId);
+            if (account == null)
+            {
+                throw new BadRequestException(DomainErrors.Account.AccountNotFound);
+            }
+
+            if (account.Balance < request.Amount)
+            {
+                throw new BadRequestException(DomainErrors.Transaction.InsufficientFunds);
+            }
+
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                account.Balance -= request.Amount;
+                await _accountRepository.UpdateAsync(account);
+
+                var transaction = new Transaction
+                {
+                    ToAccountId = account.Id,
+                    Amount = request.Amount,
+                    Type = TransactionType.Withdrawal,
+                    Status = TransactionStatus.Completed,
+                    Reference = request.Reference
+                };
+
+                await _transactionRepository.AddAsync(transaction);
+
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+
+                throw;
+            }
+        }
+
         public async Task<IEnumerable<TransactionResponseDto>> GetHistoryAsync(int pageNumber, int pageSize)
         {
             var currentUserId = _currentUserService.GetUserId();
@@ -159,8 +202,8 @@ namespace VirtualWallet.Application.Services
                 string counterpart = t.Type switch
                 {
                     TransactionType.Transfer => isSender
-                        ? t.ToAccount?.AccountNumber ?? "Desconocida"
-                        : t.FromAccount?.AccountNumber ?? "Desconocida",
+                        ? t.ToAccount?.AccountNumber ?? "Unknown"
+                        : t.FromAccount?.AccountNumber ?? "Unknown",
                     TransactionType.Deposit => "External Source",
                     TransactionType.Withdrawal => "External Destination",
                     _ => "N/A"

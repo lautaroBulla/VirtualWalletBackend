@@ -35,6 +35,14 @@ namespace VirtualWallet.Api.Controllers
         }
 
         [Authorize]
+        [HttpPost("withdrawal")]
+        public async Task<IActionResult> Withdrawal([FromBody] WithdrawalRequestDto request)
+        {
+            await _transactionService.WithdrawalAsync(request);
+            return Ok(new { message = "Withdrawal completed successfully." });
+        }
+
+        [Authorize]
         [HttpGet("history")]
         public async Task<IActionResult> GetHistory([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
