@@ -12,12 +12,13 @@ using VirtualWallet.Application.Validators;
 using VirtualWallet.Infrastructure.Persistence;
 using VirtualWallet.Infrastructure.Persistence.Repositories;
 using VirtualWallet.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace VirtualWallet.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -91,6 +92,20 @@ namespace VirtualWallet.Api
             builder.Services.AddAuthorization();
 
             var app = builder.Build();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var context = services.GetRequiredService<AppDbContext>();
+                    await context.Database.MigrateAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"--> Error al aplicar migraciones: {ex.Message}");
+                }
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
