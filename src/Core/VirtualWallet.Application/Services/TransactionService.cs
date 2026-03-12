@@ -13,26 +13,29 @@ namespace VirtualWallet.Application.Services
         private readonly IAccountRepository _accountRepository;
         private readonly ITransactionRepository _transactionRepository;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IValidator<TransferRequestDto> _validator;
+        private readonly IValidator<TransferRequestDto> _transferValidator;
+        private readonly IValidator<WithdrawalRequestDto> _withdrawalValidator;
         private readonly ICurrentUserService _currentUserService;
 
         public TransactionService(
             IAccountRepository accountRepository,
             ITransactionRepository transactionRepository,
             IUnitOfWork unitOfWork,
-            IValidator<TransferRequestDto> validator,
+            IValidator<TransferRequestDto> transferValidator,
+            IValidator<WithdrawalRequestDto> withdrawalValidator,
             ICurrentUserService currentUserService)
         {
             _accountRepository = accountRepository;
             _transactionRepository = transactionRepository;
             _unitOfWork = unitOfWork;
-            _validator = validator;
+            _transferValidator = transferValidator;
+            _withdrawalValidator = withdrawalValidator;
             _currentUserService = currentUserService;
         }
 
         public async Task MakeTransferAsync(TransferRequestDto request)
         {
-            var validationResult = await _validator.ValidateAsync(request);
+            var validationResult = await _transferValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
                 throw new ValidationException(validationResult.Errors);
@@ -134,6 +137,12 @@ namespace VirtualWallet.Application.Services
 
         public async Task WithdrawalAsync(WithdrawalRequestDto request)
         {
+            var validationResult = await _withdrawalValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var userId = _currentUserService.GetUserId();
 
             var account = await _accountRepository.GetByUserIdAsync(userId);

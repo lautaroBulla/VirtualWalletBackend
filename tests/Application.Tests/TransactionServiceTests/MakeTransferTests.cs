@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using Moq;
+using Xunit;
 using VirtualWallet.Application.DTOs;
 using VirtualWallet.Application.Interfaces;
 using VirtualWallet.Application.Interfaces.Repositories;
@@ -12,257 +13,157 @@ namespace Application.Tests.TransactionServiceTests;
 
 public class MakeTransferTests
 {
-    [Fact]
-    public async Task MakeTransferAsync_Exception_InsufficientFunds()
+    private readonly Mock<IAccountRepository> _accountRepoMock;
+    private readonly Mock<ITransactionRepository> _transactionRepoMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<ICurrentUserService> _currentUserServiceMock;
+    private readonly Mock<IValidator<TransferRequestDto>> _transferValidatorMock;
+    private readonly Mock<IValidator<WithdrawalRequestDto>> _withdrawalValidatorMock;
+    private readonly TransactionService _transactionService;
+
+    public MakeTransferTests()
     {
-        var accountRepoMock = new Mock<IAccountRepository>();
-        var transactionRepoMock = new Mock<ITransactionRepository>();
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var currentUserServiceMock = new Mock<ICurrentUserService>();
-        var validatorMock = new Mock<IValidator<TransferRequestDto>>();
+        _accountRepoMock = new Mock<IAccountRepository>();
+        _transactionRepoMock = new Mock<ITransactionRepository>();
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _currentUserServiceMock = new Mock<ICurrentUserService>();
+        _transferValidatorMock = new Mock<IValidator<TransferRequestDto>>();
+        _withdrawalValidatorMock = new Mock<IValidator<WithdrawalRequestDto>>();
 
-        var miUserId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
-
-        var myFakeAccount = new Account
-        {
-            Id = Guid.NewGuid(),
-            UserId = miUserId,
-            Balance = 50
-        };
-
-        var fakeDestinationAccount = new Account
-        {
-            Id = Guid.NewGuid(),
-            UserId = otherUserId,
-            AccountNumber = "123456789"
-        };
-
-        currentUserServiceMock.Setup(x => x.GetUserId()).Returns(miUserId);
-
-        accountRepoMock.Setup(x => x.GetByUserIdAsync(miUserId)).ReturnsAsync(myFakeAccount);
-        accountRepoMock.Setup(x => x.GetByAccountNumberAsync("123456789")).ReturnsAsync(fakeDestinationAccount);
-
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<TransferRequestDto>(), default))
+        _transferValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<TransferRequestDto>(), default))
             .ReturnsAsync(new ValidationResult());
 
-        var transactionService = new TransactionService(
-            accountRepoMock.Object,
-            transactionRepoMock.Object,
-            unitOfWorkMock.Object,
-            validatorMock.Object,
-            currentUserServiceMock.Object
+        _transactionService = new TransactionService(
+            _accountRepoMock.Object,
+            _transactionRepoMock.Object,
+            _unitOfWorkMock.Object,
+            _transferValidatorMock.Object,
+            _withdrawalValidatorMock.Object,
+            _currentUserServiceMock.Object
         );
-
-        var request = new TransferRequestDto
-        {
-            ToAccountNumber = "123456789",
-            Amount = 100,
-            Reference = "Prueba de fallo"
-        };
-
-        var exception = await Assert.ThrowsAsync<BadRequestException>(() =>
-            transactionService.MakeTransferAsync(request));
-
-        Assert.Equal(DomainErrors.Transaction.InsufficientFunds, exception.Message);
     }
 
     [Fact]
-    public async Task MakeTransferAsync_Exception_SameAccountTransfer()
+    public async Task MakeTransferAsync_ShouldCompleteTransfer_WhenRequestIsValid()
     {
-        var accountRepoMock = new Mock<IAccountRepository>();
-        var transactionRepoMock = new Mock<ITransactionRepository>();
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var currentUserServiceMock = new Mock<ICurrentUserService>();
-        var validatorMock = new Mock<IValidator<TransferRequestDto>>();
+        var currentUserId = Guid.NewGuid();
+        var fromAccount = new Account { Id = Guid.NewGuid(), UserId = currentUserId, Balance = 100m };
+        var toAccount = new Account { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), AccountNumber = "123456789", Balance = 50m };
+        var request = new TransferRequestDto { ToAccountNumber = "123456789", Amount = 50m, Reference = "Test" };
 
-        var miUserId = Guid.NewGuid();
+        _currentUserServiceMock.Setup(x => x.GetUserId()).Returns(currentUserId);
+        _accountRepoMock.Setup(x => x.GetByUserIdAsync(currentUserId)).ReturnsAsync(fromAccount);
+        _accountRepoMock.Setup(x => x.GetByAccountNumberAsync(request.ToAccountNumber)).ReturnsAsync(toAccount);
 
-        var myFakeAccount = new Account
-        {
-            Id = Guid.NewGuid(),
-            UserId = miUserId,
-            AccountNumber = "123456789",
-            Balance = 50
-        };
+        await _transactionService.MakeTransferAsync(request);
 
-        currentUserServiceMock.Setup(x => x.GetUserId()).Returns(miUserId);
+        Assert.Equal(50m, fromAccount.Balance);
+        Assert.Equal(100m, toAccount.Balance);
 
-        accountRepoMock.Setup(x => x.GetByUserIdAsync(miUserId)).ReturnsAsync(myFakeAccount);
-        accountRepoMock.Setup(x => x.GetByAccountNumberAsync("123456789")).ReturnsAsync(myFakeAccount);
+        _accountRepoMock.Verify(x => x.UpdateAsync(fromAccount), Times.Once);
+        _accountRepoMock.Verify(x => x.UpdateAsync(toAccount), Times.Once);
+        _transactionRepoMock.Verify(x => x.AddAsync(It.IsAny<Transaction>()), Times.Once);
 
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<TransferRequestDto>(), default))
-            .ReturnsAsync(new ValidationResult());
-
-        var transactionService = new TransactionService(
-            accountRepoMock.Object,
-            transactionRepoMock.Object,
-            unitOfWorkMock.Object,
-            validatorMock.Object,
-            currentUserServiceMock.Object
-        );
-
-        var request = new TransferRequestDto
-        {
-            ToAccountNumber = "123456789",
-            Amount = 100,
-            Reference = "Prueba de fallo"
-        };
-
-        var exception = await Assert.ThrowsAsync<BadRequestException>(() =>
-            transactionService.MakeTransferAsync(request));
-
-        Assert.Equal(DomainErrors.Transaction.SameAccountTransfer, exception.Message);
+        _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Never);
     }
 
     [Fact]
-    public async Task MakeTransferAsync_Exception_FromAccountNotFound()
+    public async Task MakeTransferAsync_ShouldThrowValidationException_WhenDtoIsInvalid()
     {
-        var accountRepoMock = new Mock<IAccountRepository>();
-        var transactionRepoMock = new Mock<ITransactionRepository>();
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var currentUserServiceMock = new Mock<ICurrentUserService>();
-        var validatorMock = new Mock<IValidator<TransferRequestDto>>();
+        var request = new TransferRequestDto { Amount = -10 }; 
+        var validationFailures = new List<ValidationFailure> { new("Amount", "Invalid amount") };
+        var invalidResult = new ValidationResult(validationFailures);
 
-        var miUserId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
+        _transferValidatorMock.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(invalidResult);
 
-        var myFakeAccount = new Account
-        {
-            Id = Guid.NewGuid(),
-            UserId = miUserId,
-            Balance = 50
-        };
+        await Assert.ThrowsAsync<ValidationException>(() => _transactionService.MakeTransferAsync(request));
 
-        currentUserServiceMock.Setup(x => x.GetUserId()).Returns(otherUserId);
+        _accountRepoMock.Verify(x => x.GetByUserIdAsync(It.IsAny<Guid>()), Times.Never);
+    }
 
-        accountRepoMock.Setup(x => x.GetByUserIdAsync(otherUserId)).ReturnsAsync((Account?)null);
+    [Fact]
+    public async Task MakeTransferAsync_ShouldThrowBadRequestException_WhenFromAccountNotFound()
+    {
+        var currentUserId = Guid.NewGuid();
+        var request = new TransferRequestDto { ToAccountNumber = "123456781", Amount = 50m };
 
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<TransferRequestDto>(), default))
-            .ReturnsAsync(new ValidationResult());
+        _currentUserServiceMock.Setup(x => x.GetUserId()).Returns(currentUserId);
+        _accountRepoMock.Setup(x => x.GetByUserIdAsync(currentUserId)).ReturnsAsync((Account?)null);
 
-        var transactionService = new TransactionService(
-            accountRepoMock.Object,
-            transactionRepoMock.Object,
-            unitOfWorkMock.Object,
-            validatorMock.Object,
-            currentUserServiceMock.Object
-        );
-
-        var request = new TransferRequestDto
-        {
-            ToAccountNumber = "123456781",
-            Amount = 50,
-            Reference = "Prueba de fallo"
-        };
-
-        var exception = await Assert.ThrowsAsync<BadRequestException>(() =>
-            transactionService.MakeTransferAsync(request));
-
+        var exception = await Assert.ThrowsAsync<BadRequestException>(() => _transactionService.MakeTransferAsync(request));
         Assert.Equal(DomainErrors.Account.FromAccountNotFound, exception.Message);
+
+        _unitOfWorkMock.Verify(x => x.BeginTransactionAsync(), Times.Never);
     }
 
     [Fact]
-    public async Task MakeTransferAsync_Exception_ToAccountNotFound()
+    public async Task MakeTransferAsync_ShouldThrowBadRequestException_WhenToAccountNotFound()
     {
-        var accountRepoMock = new Mock<IAccountRepository>();
-        var transactionRepoMock = new Mock<ITransactionRepository>();
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var currentUserServiceMock = new Mock<ICurrentUserService>();
-        var validatorMock = new Mock<IValidator<TransferRequestDto>>();
+        var currentUserId = Guid.NewGuid();
+        var fromAccount = new Account { Id = Guid.NewGuid(), UserId = currentUserId, Balance = 50m };
+        var request = new TransferRequestDto { ToAccountNumber = "INVALID_ACC", Amount = 50m };
 
-        var miUserId = Guid.NewGuid();
+        _currentUserServiceMock.Setup(x => x.GetUserId()).Returns(currentUserId);
+        _accountRepoMock.Setup(x => x.GetByUserIdAsync(currentUserId)).ReturnsAsync(fromAccount);
+        _accountRepoMock.Setup(x => x.GetByAccountNumberAsync(request.ToAccountNumber)).ReturnsAsync((Account?)null);
 
-        var myFakeAccount = new Account
-        {
-            Id = Guid.NewGuid(),
-            UserId = miUserId,
-            Balance = 50
-        };
-
-        currentUserServiceMock.Setup(x => x.GetUserId()).Returns(miUserId);
-
-        accountRepoMock.Setup(x => x.GetByUserIdAsync(miUserId)).ReturnsAsync(myFakeAccount);
-        accountRepoMock.Setup(x => x.GetByAccountNumberAsync("123456781")).ReturnsAsync((Account?)null);
-
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<TransferRequestDto>(), default))
-            .ReturnsAsync(new ValidationResult());
-
-        var transactionService = new TransactionService(
-            accountRepoMock.Object,
-            transactionRepoMock.Object,
-            unitOfWorkMock.Object,
-            validatorMock.Object,
-            currentUserServiceMock.Object
-        );
-
-        var request = new TransferRequestDto
-        {
-            ToAccountNumber = "123456781",
-            Amount = 50,
-            Reference = "Prueba de fallo"
-        };
-
-        var exception = await Assert.ThrowsAsync<BadRequestException>(() =>
-            transactionService.MakeTransferAsync(request));
-
+        var exception = await Assert.ThrowsAsync<BadRequestException>(() => _transactionService.MakeTransferAsync(request));
         Assert.Equal(DomainErrors.Account.ToAccountNotFound, exception.Message);
     }
 
     [Fact]
-    public async Task MakeTransferAsync_Success()
+    public async Task MakeTransferAsync_ShouldThrowBadRequestException_WhenSameAccountTransfer()
     {
-        var accountRepoMock = new Mock<IAccountRepository>();
-        var transactionRepoMock = new Mock<ITransactionRepository>();
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var currentUserServiceMock = new Mock<ICurrentUserService>();
-        var validatorMock = new Mock<IValidator<TransferRequestDto>>();
+        var currentUserId = Guid.NewGuid();
+        var accountId = Guid.NewGuid();
+        var myAccount = new Account { Id = accountId, UserId = currentUserId, AccountNumber = "MY_ACC", Balance = 50m };
+        var request = new TransferRequestDto { ToAccountNumber = "MY_ACC", Amount = 10m };
 
-        var miUserId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
+        _currentUserServiceMock.Setup(x => x.GetUserId()).Returns(currentUserId);
+        _accountRepoMock.Setup(x => x.GetByUserIdAsync(currentUserId)).ReturnsAsync(myAccount);
+        _accountRepoMock.Setup(x => x.GetByAccountNumberAsync(request.ToAccountNumber)).ReturnsAsync(myAccount); 
 
-        var myFakeAccount = new Account
-        {
-            Id = Guid.NewGuid(),
-            UserId = miUserId,
-            Balance = 50
-        };
+        var exception = await Assert.ThrowsAsync<BadRequestException>(() => _transactionService.MakeTransferAsync(request));
+        Assert.Equal(DomainErrors.Transaction.SameAccountTransfer, exception.Message);
+    }
 
-        var fakeDestinationAccount = new Account
-        {
-            Id = Guid.NewGuid(),
-            UserId = otherUserId,
-            AccountNumber = "123456789"
-        };
+    [Fact]
+    public async Task MakeTransferAsync_ShouldThrowBadRequestException_WhenInsufficientFunds()
+    {
+        var currentUserId = Guid.NewGuid();
+        var fromAccount = new Account { Id = Guid.NewGuid(), UserId = currentUserId, Balance = 50m }; 
+        var toAccount = new Account { Id = Guid.NewGuid(), AccountNumber = "TARGET_ACC" };
+        var request = new TransferRequestDto { ToAccountNumber = "TARGET_ACC", Amount = 100m };
 
-        currentUserServiceMock.Setup(x => x.GetUserId()).Returns(miUserId);
+        _currentUserServiceMock.Setup(x => x.GetUserId()).Returns(currentUserId);
+        _accountRepoMock.Setup(x => x.GetByUserIdAsync(currentUserId)).ReturnsAsync(fromAccount);
+        _accountRepoMock.Setup(x => x.GetByAccountNumberAsync(request.ToAccountNumber)).ReturnsAsync(toAccount);
 
-        accountRepoMock.Setup(x => x.GetByUserIdAsync(miUserId)).ReturnsAsync(myFakeAccount);
-        accountRepoMock.Setup(x => x.GetByAccountNumberAsync("123456789")).ReturnsAsync(fakeDestinationAccount);
+        var exception = await Assert.ThrowsAsync<BadRequestException>(() => _transactionService.MakeTransferAsync(request));
+        Assert.Equal(DomainErrors.Transaction.InsufficientFunds, exception.Message);
+    }
 
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<TransferRequestDto>(), default))
-            .ReturnsAsync(new ValidationResult());
+    [Fact]
+    public async Task MakeTransferAsync_ShouldRollbackAndRethrow_WhenDatabaseExceptionOccurs()
+    {
+        var currentUserId = Guid.NewGuid();
+        var fromAccount = new Account { Id = Guid.NewGuid(), UserId = currentUserId, Balance = 100m };
+        var toAccount = new Account { Id = Guid.NewGuid(), AccountNumber = "TARGET_ACC", Balance = 0m };
+        var request = new TransferRequestDto { ToAccountNumber = "TARGET_ACC", Amount = 50m };
 
-        var transactionService = new TransactionService(
-            accountRepoMock.Object,
-            transactionRepoMock.Object,
-            unitOfWorkMock.Object,
-            validatorMock.Object,
-            currentUserServiceMock.Object
-        );
+        _currentUserServiceMock.Setup(x => x.GetUserId()).Returns(currentUserId);
+        _accountRepoMock.Setup(x => x.GetByUserIdAsync(currentUserId)).ReturnsAsync(fromAccount);
+        _accountRepoMock.Setup(x => x.GetByAccountNumberAsync(request.ToAccountNumber)).ReturnsAsync(toAccount);
 
-        var request = new TransferRequestDto
-        {
-            ToAccountNumber = "123456789",
-            Amount = 50,
-            Reference = "Prueba de fallo"
-        };
+        _accountRepoMock.Setup(x => x.UpdateAsync(toAccount)).ThrowsAsync(new Exception("Deadlock detected"));
 
-        await transactionService.MakeTransferAsync(request);
+        var exception = await Assert.ThrowsAsync<Exception>(() => _transactionService.MakeTransferAsync(request));
+        Assert.Equal("Deadlock detected", exception.Message);
 
-        Assert.Equal(0, myFakeAccount.Balance);
-        Assert.Equal(50, fakeDestinationAccount.Balance);
-
-        unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(x => x.BeginTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(x => x.CommitTransactionAsync(), Times.Never);
+        _unitOfWorkMock.Verify(x => x.RollbackTransactionAsync(), Times.Once);
     }
 }
