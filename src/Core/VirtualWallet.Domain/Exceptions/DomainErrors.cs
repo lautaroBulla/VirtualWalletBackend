@@ -11,7 +11,6 @@
 
         public static class Account
         {
-            public const string InsufficientFunds = "Insufficient funds.";
             public const string AccountNotFound = "Account not found.";
             public const string FromAccountNotFound = "Account not found.";
             public const string ToAccountNotFound = "Account not found.";

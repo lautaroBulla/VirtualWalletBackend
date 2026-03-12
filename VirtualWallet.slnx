@@ -6,6 +6,9 @@
     <File Path="Dockerfile" />
   </Folder>
   <Folder Name="/src/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/Application.Tests/Application.Tests.csproj" Id="b8a7553b-bcd7-46e9-a3ab-4e14ac8fd111" />
+  </Folder>
   <Project Path="src/Core/VirtualWallet.Application/VirtualWallet.Application.csproj" Id="6ad85f9f-6ee8-465f-b7b0-64f9ea218788" />
   <Project Path="src/Core/VirtualWallet.Domain/VirtualWallet.Domain.csproj" Id="b3322fad-2494-4ac2-b09a-e1c787ce3f72" />
   <Project Path="src/Infrastructure/VirtualWallet.Infrastructure/VirtualWallet.Infrastructure.csproj" Id="84cb4ad1-51bc-40ca-a14f-dfb594d8b8d7" />
