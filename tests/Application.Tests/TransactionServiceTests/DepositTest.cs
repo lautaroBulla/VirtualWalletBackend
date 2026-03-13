@@ -1,11 +1,12 @@
 ﻿using FluentValidation;
+using FluentValidation.Results;
 using Moq;
 using VirtualWallet.Application.DTOs;
 using VirtualWallet.Application.Interfaces;
 using VirtualWallet.Application.Interfaces.Repositories;
 using VirtualWallet.Application.Services;
 using VirtualWallet.Domain.Entities;
-using VirtualWallet.Domain.Enums; 
+using VirtualWallet.Domain.Enums;
 using VirtualWallet.Domain.Exceptions;
 
 namespace Application.Tests.TransactionServiceTests;
@@ -17,6 +18,7 @@ public class DepositTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly Mock<IValidator<TransferRequestDto>> _transferValidatorMock;
+    private readonly Mock<IValidator<DepositRequestDto>> _depositValidatorMock;
     private readonly Mock<IValidator<WithdrawalRequestDto>> _withdrawalValidatorMock;
     private readonly TransactionService _transactionService;
 
@@ -27,13 +29,18 @@ public class DepositTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _currentUserServiceMock = new Mock<ICurrentUserService>();
         _transferValidatorMock = new Mock<IValidator<TransferRequestDto>>();
+        _depositValidatorMock = new Mock<IValidator<DepositRequestDto>>();
         _withdrawalValidatorMock = new Mock<IValidator<WithdrawalRequestDto>>();
+
+        _depositValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<DepositRequestDto>(), default))
+            .ReturnsAsync(new ValidationResult());
 
         _transactionService = new TransactionService(
             _accountRepoMock.Object,
             _transactionRepoMock.Object,
             _unitOfWorkMock.Object,
             _transferValidatorMock.Object,
+            _depositValidatorMock.Object,
             _withdrawalValidatorMock.Object,
             _currentUserServiceMock.Object
         );

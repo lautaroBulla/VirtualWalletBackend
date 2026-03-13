@@ -14,6 +14,7 @@ namespace VirtualWallet.Application.Services
         private readonly ITransactionRepository _transactionRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<TransferRequestDto> _transferValidator;
+        private readonly IValidator<DepositRequestDto> _depositValidator;
         private readonly IValidator<WithdrawalRequestDto> _withdrawalValidator;
         private readonly ICurrentUserService _currentUserService;
 
@@ -22,6 +23,7 @@ namespace VirtualWallet.Application.Services
             ITransactionRepository transactionRepository,
             IUnitOfWork unitOfWork,
             IValidator<TransferRequestDto> transferValidator,
+            IValidator<DepositRequestDto> depositValidator,
             IValidator<WithdrawalRequestDto> withdrawalValidator,
             ICurrentUserService currentUserService)
         {
@@ -29,6 +31,7 @@ namespace VirtualWallet.Application.Services
             _transactionRepository = transactionRepository;
             _unitOfWork = unitOfWork;
             _transferValidator = transferValidator;
+            _depositValidator = depositValidator;
             _withdrawalValidator = withdrawalValidator;
             _currentUserService = currentUserService;
         }
@@ -99,6 +102,12 @@ namespace VirtualWallet.Application.Services
 
         public async Task DepositAsync(DepositRequestDto request)
         {
+            var validationResult = await _depositValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var userId = _currentUserService.GetUserId();
 
             var account = await _accountRepository.GetByUserIdAsync(userId);

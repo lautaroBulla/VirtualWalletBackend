@@ -18,6 +18,7 @@ public class WithdrawalTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly Mock<IValidator<TransferRequestDto>> _transferValidatorMock;
+    private readonly Mock<IValidator<DepositRequestDto>> _depositValidatorMock;
     private readonly Mock<IValidator<WithdrawalRequestDto>> _withdrawalValidatorMock;
     private readonly TransactionService _transactionService;
 
@@ -28,6 +29,7 @@ public class WithdrawalTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _currentUserServiceMock = new Mock<ICurrentUserService>();
         _transferValidatorMock = new Mock<IValidator<TransferRequestDto>>();
+        _depositValidatorMock = new Mock<IValidator<DepositRequestDto>>();
         _withdrawalValidatorMock = new Mock<IValidator<WithdrawalRequestDto>>();
 
         _withdrawalValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<WithdrawalRequestDto>(), default))
@@ -38,6 +40,7 @@ public class WithdrawalTests
             _transactionRepoMock.Object,
             _unitOfWorkMock.Object,
             _transferValidatorMock.Object,
+            _depositValidatorMock.Object,
             _withdrawalValidatorMock.Object,
             _currentUserServiceMock.Object
         );
