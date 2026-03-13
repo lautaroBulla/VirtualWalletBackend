@@ -6,7 +6,7 @@ API RESTful que simula el núcleo transaccional de una billetera virtual. Diseñ
 
 El proyecto está estructurado utilizando **Clean Architecture**, asegurando un bajo acoplamiento y alta cohesión mediante la separación estricta de responsabilidades (Domain, Application, Infrastructure y Presentation).
 
-* **Framework:** .NET (C#)
+* **Framework:** ASP.NET Core (C#)
 * **Base de Datos:** SQL Server + Entity Framework Core (Code-First)
 * **Seguridad:** Autenticación y Autorización basada en **JWT** (JSON Web Tokens).
 * **Validaciones:** FluentValidation.
